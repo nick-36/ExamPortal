@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+  seed     = "prisma/seed.ts"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model User {
+  id            String          @id @default(uuid())
+  username      String          @unique
+  email         String          @unique
+  password      String
+  role          UserRole?       @default(STUDENT)
+  mobile        String
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  Question      Question[]
+  Test          Test[]
+  TestGroup     TestGroup[]
+  QuestionGroup QuestionGroup[]
+}
+
+model Question {
+  id             String                  @id @default(uuid())
+  content        String
+  type           QuestionType
+  options        String[]
+  correctAnswer  String
+  category       String?
+  tags           String[]
+  attachment     String?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+  status         String?
+  difficulty     QuestionDifficultyType? @default(EASY)
+  creator        User                    @relation(fields: [creatorId], references: [id])
+  creatorId      String
+  questionGroups QuestionGroup[]         @relation("QuestionGroupToQuestion")
+}
+
+model QuestionGroup {
+  id          String     @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  questions   Question[] @relation("QuestionGroupToQuestion")
+  Test        Test?      @relation(fields: [testId], references: [id])
+  testId      String?
+  creatorId   String
+  creator     User       @relation(fields: [creatorId], references: [id])
+}
+
+model Test {
+  id             String          @id @default(uuid())
+  name           String
+  description    String?
+  category       String?
+  duration       Int
+  passingScore   Int
+  totalMarks     Int
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  status         String?
+  tags           String[]
+  visibility     Boolean?        @default(true)
+  questionGroups QuestionGroup[]
+  creatorId      String
+  creator        User            @relation(fields: [creatorId], references: [id])
+  testGroupId    String
+  TestGroup      TestGroup       @relation(fields: [testGroupId], references: [id])
+}
+
+model TestGroup {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  creatorId   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  status      String?
+  tags        String[]
+  visibility  Boolean? @default(true)
+  tests       Test[]
+  creator     User     @relation(fields: [creatorId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  STUDENT
+  EDUCATOR
+}
+
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SINGLE_CHOICE
+  SHORT_ANSWER
+  ESSAY
+}
+
+enum QuestionDifficultyType {
+  EASY
+  MEDIUM
+  HARD
+}
